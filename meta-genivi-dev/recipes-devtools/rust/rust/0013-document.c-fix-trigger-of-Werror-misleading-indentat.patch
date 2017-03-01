@@ -1,0 +1,44 @@
+From 2c3e600653f44b8567d5c134eac5b386c5e24b16 Mon Sep 17 00:00:00 2001
+From: Ivan Shapovalov <intelfx@intelfx.name>
+Date: Sat, 28 May 2016 13:27:49 +0400
+Subject: [PATCH] document.c: fix trigger of -Werror=misleading-indentation
+
+gcc 6.1.1 triggers a warning here, which breaks git rust build.
+There is no actual bug, because the "if" branch exits the loop, but if it wasn't so, it'd be a bug.
+
+```
+/tmp/makepkg/build/rust-git/src/rust/src/rt/hoedown/src/document.c: In function 'char_link':
+/tmp/makepkg/build/rust-git/src/rust/src/rt/hoedown/src/document.c:1161:5: error: this 'else' clause does not guard... [-Werror=misleading-indentation]
+     else nb_p--; i++;
+     ^~~~
+/tmp/makepkg/build/rust-git/src/rust/src/rt/hoedown/src/document.c:1161:18: note: ...this statement, but the latter is misleadingly indented as if it is guarded by the 'else'
+     else nb_p--; i++;
+```
+---
+ src/document.c | 6 +++---
+ 1 file changed, 3 insertions(+), 3 deletions(-)
+
+diff --git a/src/document.c b/src/document.c
+index e2731da..8cd7315 100644
+--- a/src/rt/hoedown/src/document.c
++++ b/src/rt/hoedown/src/document.c
+@@ -1154,13 +1154,13 @@ char_link(hoedown_buffer *ob, hoedown_document *doc, uint8_t *data, size_t offse
+ 		while (i < size) {
+ 			if (data[i] == '\\') i += 2;
+ 			else if (data[i] == '(' && i != 0) {
+-				nb_p++; i++;
++				nb_p++;
+ 			}
+ 			else if (data[i] == ')') {
+ 				if (nb_p == 0) break;
+-				else nb_p--; i++;
++				else nb_p--;
+ 			} else if (i >= 1 && _isspace(data[i-1]) && (data[i] == '\'' || data[i] == '"')) break;
+-			else i++;
++			i++;
+ 		}
+ 
+ 		if (i >= size) goto cleanup;
+-- 
+2.9.3
+
